@@ -29,7 +29,14 @@ jobs:
           cp /tmp/keep/main.dart lib/main.dart
           python3 /tmp/keep/patch_android.py
       - run: flutter pub get
-      - run: flutter build apk --release
+      - name: Build APK (auto retry)
+        run: |
+          for i in 1 2 3; do
+            flutter build apk --release && exit 0
+            echo "Attempt $i failed, retrying in 20s..."
+            sleep 20
+          done
+          exit 1
       - uses: actions/upload-artifact@v4
         with:
           name: ai-girlfriend-apk
