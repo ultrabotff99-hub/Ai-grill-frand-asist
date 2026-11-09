@@ -1,0 +1,36 @@
+name: Build APK
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Save our files
+        run: |
+          mkdir -p /tmp/keep
+          cp pubspec.yaml /tmp/keep/pubspec.yaml
+          cp main.dart /tmp/keep/main.dart
+          cp patch_android.py /tmp/keep/patch_android.py
+      - run: flutter create --org com.aigf --platforms android .
+      - name: Restore our files
+        run: |
+          cp /tmp/keep/pubspec.yaml pubspec.yaml
+          mkdir -p lib
+          cp /tmp/keep/main.dart lib/main.dart
+          python3 /tmp/keep/patch_android.py
+      - run: flutter pub get
+      - run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ai-girlfriend-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
